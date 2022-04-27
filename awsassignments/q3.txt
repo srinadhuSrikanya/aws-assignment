@@ -1,0 +1,49 @@
+const aws = require('aws-sdk'); //importing sdk
+const ddb = new aws.DynamoDB.DocumentClient({ region: "us-east-1"}); //importing dynamodb
+const S3 = new aws.S3(); //importing s3
+
+
+
+//async function to read from dynamodb
+async function readDB(){
+const params={
+TableName:"table",
+Limit:5
+};
+return ddb.scan(params).promise();
+}
+
+
+
+//async function to write from dynamodb
+async function writeDB(data){
+const params={
+Body:JSON.stringify(data.Items),
+ContentType:"application/json",
+Bucket:"s3bucketsr",
+Key:"writeDataDB"
+};
+
+//upload file on s3
+S3.putObject(params,(err,results) => {
+if(err){
+return(err);
+} else{
+return(results);
+}
+});
+}
+exports.handler = async (event,context,callback) => {
+try {
+let data = await readDB();
+await writeDB(data);
+console.log("File uploaded successfully");
+callback (null,{
+statusCode:200,
+body:data.Items
+});
+} catch (e) {
+console.log("Uploading failed " + e);
+}
+
+};
